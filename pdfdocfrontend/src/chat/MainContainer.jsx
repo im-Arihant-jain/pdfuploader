@@ -1,108 +1,79 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState } from 'react';
 import ChatArea from './ChatArea';
 import RightPanel from './RightPanel';
 import { FaArrowCircleUp } from "react-icons/fa";
-// import { LanguageContext } from '../../context/LanguageContext';
-
-async function createChatSession(apiKey, externalUserId) {
-  const response = await fetch('https://api.on-demand.io/chat/v1/sessions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'apikey': apiKey
-    },
-    body: JSON.stringify({
-      pluginIds: [],
-      externalUserId: externalUserId
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to create chat session');
-  }
-
-  const data = await response.json();
-  return data.data.id;
-}
-
-async function submitQuery(apiKey, sessionId, query) {
-  const response = await fetch(`https://api.on-demand.io/chat/v1/sessions/${sessionId}/query`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'apikey': apiKey
-    },
-    body: JSON.stringify({
-      endpointId: 'predefined-openai-gpt4o',
-      query: query,
-      pluginIds: ['plugin-1712327325', 'plugin-1713962163'],
-      responseMode: 'sync'
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to submit query');
-  }
-
-  const data = await response.json();
-  return data;
-}
+import axios from 'axios';
 
 const MainContainer = () => {
   const [messages, setMessages] = useState([]);
   const [inputmssg, setInputMssg] = useState('');
-    const [itinerary, setItinerary] = useState("");
-    const [imageurl ,setImageurl] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
-  const url = 'https://abf0-2401-4900-838f-e94a-2480-70c4-7f15-9e98.ngrok-free.app/upload_image/';
-  const query = 'hey is it done';
+  const [filename, setFilename] = useState('');
+  const [imageurl, setImageurl] = useState('');
   
   const handleSendtext = async () => {
-    const apiKey = 'QYB6bZd7llKZnjImNfsWvyhMim0Yz0RP';
-    const externalUserId = 'arihantjain';
+    if (!inputmssg) {
+      alert("Please enter a message first!");
+      return;
+    }
 
     try {
-      const sessionId = await createChatSession(apiKey, externalUserId);
-      const response = await submitQuery(apiKey, sessionId, inputmssg);
-      const answer = response.data.answer;
-      
-      // Update message state with both input and output
+      const response = await axios.get(
+        `http://127.0.0.1:8000/getresult/${filename}/${inputmssg}`
+      );
+
+      console.log('Response data:', response.content);
+
+      // Assuming response.data.result contains the result
       setMessages((prevMessages) => [
         ...prevMessages,
-        { input: inputmssg, output: answer }
+        { input: inputmssg, output: response.content},
       ]);
-      setInputMssg(''); // Clear input message
+
+      setInputMssg(''); // Clear the input field after sending the message
     } catch (error) {
-      console.error(error);
+      console.error('Error sending message:', error);
+      alert('Error sending message. Please try again.');
     }
   };
-const handleFileChange = (e) => {
-    setSelectedFile(e.target.files[0]);
-    setItinerary("");
-};
-const handleUploadDoc = async () => {
-  if (!selectedFile) return alert("Please select a DOC file first!");
-  setImageurl('https://static.vecteezy.com/system/resources/previews/020/897/448/original/upload-document-with-pdf-format-file-concept-illustration-flat-design-eps10-modern-graphic-element-for-landing-page-empty-state-ui-infographic-icon-vector.jpg')
-  const formData = new FormData();
-  formData.append('pdf', selectedFile);
-  console.log(formData);
-  // try {
-  //   const response = await axios.post("http://localhost:5000/upload-doc", formData, {
-  //     headers: { "Content-Type": "multipart/form-data" },
-  //   });
 
-  //   // Set itinerary to the response from the backend
-  //   setItinerary(response.data.itinerary || "No itinerary could be generated.");
-  // } catch (error) {
-  //   console.error("Error generating response:", error);
-  //   setItinerary("Error generating response.");
-  // }
-};
+  const handleFileChange = (e) => {
+    setSelectedFile(e.target.files[0]);
+    setFilename('');
+  };
+
+  const handleUploadDoc = async () => {
+    if (!selectedFile) {
+      alert("Please select a file first!");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+
+    try {
+      const response = await axios.post(
+        'http://127.0.0.1:8000/uploadpdf/',
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            accept: 'application/json',
+          },
+        }
+      );
+
+      console.log('Upload successful:', response.data);
+      setFilename(response.data.filename); // Update the filename state
+      alert('File uploaded successfully!');
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      alert('Error uploading file. Please try again.');
+    }
+  };
+
   return (
     <div className="flex flex-col md:flex-row w-full min-h-screen">
-      {/* <div className="flex flex-col w-full md:w-1/4">
-        <LeftPanel />
-      </div> */}
       <div className="flex flex-col w-full md:w-3/4">
         <ChatArea messages={messages} />
         <div className="flex items-center p-2 bg-white border-t border-gray-300 rounded-lg mt-1 shadow-sm">
@@ -113,25 +84,36 @@ const handleUploadDoc = async () => {
             placeholder="Type your message..."
             className="flex-1 p-2 border rounded-lg"
           />
-          <button onClick={handleSendtext} className="ml-2 p-2 text-blue-500 hover:text-blue-700">
+          <button
+            onClick={handleSendtext}
+            className="ml-2 p-2 text-blue-500 hover:text-blue-700"
+          >
             <FaArrowCircleUp size={30} />
           </button>
           <input
-          type="file"
-           accept=".doc,.docx,.pdf"
-          onChange={handleFileChange}
-          className="ml-2"
-        />
-        <button className="ml-2 p-2 text-blue-500 hover:text-blue-700" onClick={handleUploadDoc}>
-          <FaArrowCircleUp size={30}  />
-        </button>
+            type="file"
+            accept="application/pdf"
+            onChange={handleFileChange}
+            className="ml-2"
+          />
+          <button
+            onClick={handleUploadDoc}
+            className="ml-2 p-2 text-blue-500 hover:text-blue-700"
+          >
+            Upload File
+          </button>
         </div>
+        {filename && (
+          <p className="mt-2 text-sm text-green-500">
+            File "{filename}" uploaded successfully!
+          </p>
+        )}
       </div>
       <div className="flex flex-col w-full md:w-1/4">
-      <RightPanel imageurl = {imageurl}/>
+        <RightPanel imageurl={imageurl} />
       </div>
     </div>
-  );        
+  );
 };
 
 export default MainContainer;
