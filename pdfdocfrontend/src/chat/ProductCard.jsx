@@ -1,5 +1,5 @@
 import React from 'react';
-import image2 from "./assets/image2.jpg";
+// import image2 from "./assets/image2.jpg";
 // import item from './assets/images.png';
 const ProductCard = ({ title, description, image, price }) => {
   return (

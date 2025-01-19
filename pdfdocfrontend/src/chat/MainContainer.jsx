@@ -52,37 +52,10 @@ const MainContainer = () => {
   const [messages, setMessages] = useState([]);
   const [inputmssg, setInputMssg] = useState('');
     const [itinerary, setItinerary] = useState("");
+    const [imageurl ,setImageurl] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
   const url = 'https://abf0-2401-4900-838f-e94a-2480-70c4-7f15-9e98.ngrok-free.app/upload_image/';
   const query = 'hey is it done';
-  // useEffect(() => {
-  
-    // handleSendImage(); // Call the async function
-  // }, [uploadedImage]); // Dependency array includes uploadedImage if it's necessary to trigger this effect
-  
-  
-  // const handleSendImage = async () => {
-  //   if (!uploadedImage) {
-  //     console.error('No image uploaded');
-  //     return;
-  //   }
-
-  //   try {
-  //     const requestOptions = {
-  //       method: 'POST',
-  //       headers: {
-  //         'Content-Type': 'application/json'
-  //       },
-  //       body: JSON.stringify(query) // Pass image URL to backend
-  //     };
-
-  //     const response = await fetch(url, requestOptions);
-  //     const data = await response.json();
-  //     console.log(data);
-  //   } catch (error) {
-  //     console.error('Error:', error);
-  //   }
-  // };
   
   const handleSendtext = async () => {
     const apiKey = 'QYB6bZd7llKZnjImNfsWvyhMim0Yz0RP';
@@ -109,7 +82,7 @@ const handleFileChange = (e) => {
 };
 const handleUploadDoc = async () => {
   if (!selectedFile) return alert("Please select a DOC file first!");
-
+  setImageurl('https://static.vecteezy.com/system/resources/previews/020/897/448/original/upload-document-with-pdf-format-file-concept-illustration-flat-design-eps10-modern-graphic-element-for-landing-page-empty-state-ui-infographic-icon-vector.jpg')
   const formData = new FormData();
   formData.append('pdf', selectedFile);
   console.log(formData);
@@ -155,10 +128,10 @@ const handleUploadDoc = async () => {
         </div>
       </div>
       <div className="flex flex-col w-full md:w-1/4">
-      <RightPanel imageurl = {''}/>
+      <RightPanel imageurl = {imageurl}/>
       </div>
     </div>
-  );
+  );        
 };
 
 export default MainContainer;
