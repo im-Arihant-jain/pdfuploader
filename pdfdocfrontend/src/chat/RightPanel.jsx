@@ -15,12 +15,9 @@ const RightPanel = ({ imageurl }) => {
         image={images}  // Replace with the actual image path
         price="₹2000"
       />
-      <ProductCard
-        title=""
-        description=""
-        image={imageurl}  // Replace with the actual image path
-        price=""
-      />
+      <br/>
+      <br/>
+      <h1 className="text-lg font-bold text-gray-800 mb-2">{imageurl}</h1>
 
       {/* </div> */}
     </div>

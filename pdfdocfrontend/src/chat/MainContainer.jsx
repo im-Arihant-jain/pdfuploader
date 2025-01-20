@@ -3,37 +3,46 @@ import ChatArea from './ChatArea';
 import RightPanel from './RightPanel';
 import { FaArrowCircleUp } from "react-icons/fa";
 import axios from 'axios';
-
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import CONFIG from './config';
 const MainContainer = () => {
   const [messages, setMessages] = useState([]);
   const [inputmssg, setInputMssg] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [filename, setFilename] = useState('');
-  const [imageurl, setImageurl] = useState('');
-  
-  const handleSendtext = async () => {
+  const [successupload, setSuccessupload] = useState('');
+  const [loading, setLoading] = useState(false); // State for loader
+const handleSendtext = async () => {
     if (!inputmssg) {
-      alert("Please enter a message first!");
+      toast.error("Please enter a message first!");
       return;
     }
 
     try {
-      const response = await axios.get(
-        `http://127.0.0.1:8000/getresult/${filename}/${inputmssg}`
-      );
-
-      console.log('Response data:', response.content);
-
-      // Assuming response.data.result contains the result
       setMessages((prevMessages) => [
         ...prevMessages,
-        { input: inputmssg, output: response.content},
+        { input: inputmssg, output: '' },
       ]);
 
-      setInputMssg(''); // Clear the input field after sending the message
+      const response = await axios.get(
+        `${CONFIG.LOCALHOST}/getresult/${filename}/${inputmssg}`
+      );
+
+      console.log('Response data:', response.data.content);
+
+      setMessages((prevMessages) =>
+        prevMessages.map((msg, index) =>
+          index === prevMessages.length - 1
+            ? { ...msg, output: response.data.content }
+            : msg
+        )
+      );
+
+      setInputMssg(''); // Clear the input field
     } catch (error) {
       console.error('Error sending message:', error);
-      alert('Error sending message. Please try again.');
+      toast.error('Error sending message. Please try again.');
     }
   };
 
@@ -44,16 +53,18 @@ const MainContainer = () => {
 
   const handleUploadDoc = async () => {
     if (!selectedFile) {
-      alert("Please select a file first!");
+      toast.error("Please select a file first!");
       return;
     }
 
     const formData = new FormData();
     formData.append('file', selectedFile);
 
+    setLoading(true); // Start the loader
+
     try {
       const response = await axios.post(
-        'http://127.0.0.1:8000/uploadpdf/',
+        `${CONFIG.LOCALHOST}/uploadpdf/`,
         formData,
         {
           headers: {
@@ -65,15 +76,20 @@ const MainContainer = () => {
 
       console.log('Upload successful:', response.data);
       setFilename(response.data.filename); // Update the filename state
-      alert('File uploaded successfully!');
+      toast.success('File uploaded successfully!');
+      setSuccessupload('File uploaded successfully!');
     } catch (error) {
       console.error('Error uploading file:', error);
-      alert('Error uploading file. Please try again.');
+      toast.error('Error uploading file. Please try again.');
+    } finally {
+      setLoading(false); // Stop the loader
     }
   };
 
   return (
     <div className="flex flex-col md:flex-row w-full min-h-screen">
+      <ToastContainer position="top-right" autoClose={3000} />
+
       <div className="flex flex-col w-full md:w-3/4">
         <ChatArea messages={messages} />
         <div className="flex items-center p-2 bg-white border-t border-gray-300 rounded-lg mt-1 shadow-sm">
@@ -100,7 +116,13 @@ const MainContainer = () => {
             onClick={handleUploadDoc}
             className="ml-2 p-2 text-blue-500 hover:text-blue-700"
           >
-            Upload File
+            {loading ? (
+              <div className="inline-block p-1.5 rounded-lg mb-2 bg-gray-300 self-start animate-pulse">
+              Uploading...
+            </div>
+            ) : (
+              'Upload File'
+            )}
           </button>
         </div>
         {filename && (
@@ -110,10 +132,18 @@ const MainContainer = () => {
         )}
       </div>
       <div className="flex flex-col w-full md:w-1/4">
-        <RightPanel imageurl={imageurl} />
+        <RightPanel imageurl={''} />
       </div>
     </div>
   );
 };
 
+
 export default MainContainer;
+
+
+
+
+
+
+
